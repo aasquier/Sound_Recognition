@@ -7,7 +7,7 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 
 DATA_FILE = "data/column_3C_weka.csv"
 FEATURES = 6
-TEST_SIZE = 0.3
+TEST_SIZE = 0.2
 
 
 def main():
@@ -24,7 +24,7 @@ def main():
     predictions = classifier.predict(features_test)
 
     print(confusion_matrix(labels_test,predictions))
-    print(classification_report(labels_test,predictions))
+    #print(classification_report(labels_test,predictions))
     print(accuracy_score(labels_test, predictions))
 
 
@@ -34,8 +34,8 @@ def prepareDataset(fileName):
     print "\nColumns: ", list(dataset), "\n"
 
     #Seperates the dataset into attributes and labels (assuming last column is label)
-    X = dataset.iloc[:FEATURES, 0:FEATURES].values   #features
-    y = dataset.iloc[:FEATURES, FEATURES].values     #labels
+    X = dataset.iloc[:, 0:FEATURES].values   #features
+    y = dataset.iloc[:, FEATURES].values     #labels
 
     #Seperates into training and testing sets
     features_train, features_test, labels_train, labels_test = train_test_split(X, y, test_size=TEST_SIZE, random_state=0)
