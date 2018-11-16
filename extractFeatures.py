@@ -10,7 +10,19 @@ import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from scipy.fftpack import fft, fftfreq
 
-np.set_printoptions(threshold=np.nan) #Configure numpy's array printing to show everything
+
+'''
+There are three main functions you can do with this program:
+1. Extract and save the data to a .csv file
+2. Extract, normalize, and save the data to a .csv file
+3. Read in from the .csv file with readDataFile() (import functino into project)
+
+=> To import from another directory:
+import sys
+sys.path.insert(0, 'path/to/directory/with/extractFeatures')
+from extractFeatures import readDataFile
+'''
+
 
 DATA_PATH       = "data/audio/*.wav"
 AUDIO_DATA      = "data/audioData.csv"
@@ -24,23 +36,17 @@ READ_ALL = -1
 TRAINING_M = 1500     # How many examples do we want here to divide the training and test sets??
 
 
-def main():
-    #extractFeatures()
-    #extractAndNormalizeFeatures()
-    trainingExamples, trainingTargets, testingExamples, testingTargets = readDataFile(AUDIO_DATA)
-
-
 ''' Extracts features and saves into a .csv file '''
 def extractFeatures():
     audioFeatures, imageFeatures = parseAudioFiles(DATA_PATH, READ_ALL)
-    saveAsCSV(audioFeatures, imageFeatures)
+    saveAsCSV(audioFeatures, imageFeatures, "audioData.csv", "imageData.csv")
 
 
 ''' Extracts and normalizes features and saves into a .csv file '''
 def extractAndNormalizeFeatures():
     audioFeatures, imageFeatures = parseAudioFiles(DATA_PATH, READ_ALL)
     audioFeatures, imageFeatures = normalizeData(audioFeatures, imageFeatures)
-    saveAsCSV(audioFeatures, imageFeatures)
+    saveAsCSV(audioFeatures, imageFeatures, "audioDataNormalize.csv", "imageDataNormalize.csv")
 
 
 '''
@@ -71,9 +77,9 @@ def parseAudioFiles(path, amountToRead):
 
 
 ''' Takes two arrays of features and saves them into .csv files '''
-def saveAsCSV(audioFeatures, imageFeatures):
-    np.savetxt("audioDataNormalized.csv", audioFeatures, delimiter=",")
-    np.savetxt("imageDataNormalized.csv", imageFeatures, delimiter=",")
+def saveAsCSV(audioFeatures, imageFeatures, audioFileName, imageFileName):
+    np.savetxt(audioFileName, audioFeatures, delimiter=",")
+    np.savetxt(imageFileName, imageFeatures, delimiter=",")
 
 
 ''' Returns the label by stripping it from the filename '''
@@ -171,6 +177,3 @@ def convertWavToSpectrogram(fileName):
     plt.ylabel('Frequency [Hz]')
     plt.xlabel('Time [sec]')
     plt.show()
-
-
-main()
