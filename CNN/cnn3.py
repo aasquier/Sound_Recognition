@@ -35,7 +35,6 @@ def main():
     print "Accuracy: ", accuracy, "%"
 
 
-
 def classifyData(dataFileName):
     X_train, y_train, X_test, y_test = readDataFile(dataFileName)
 
