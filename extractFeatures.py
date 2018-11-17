@@ -15,7 +15,7 @@ from scipy.fftpack import fft, fftfreq
 There are three main functions you can do with this program:
 1. Extract and save the data to a .csv file
 2. Extract, normalize, and save the data to a .csv file
-3. Read in from the .csv file with readDataFile() (import functino into project)
+3. Read in from the .csv file with readDataFile() (import function into project)
 
 => To import from another directory:
 import sys
