@@ -38,23 +38,6 @@ def main():
 def classifyData(dataFileName):
     X_train, y_train, X_test, y_test = readDataFile(dataFileName)
 
-
-    # X_train2, y_train2, X_test2, y_test2 = readDataFile(IMAGE_DATA)
-    #
-    # X_train = np.zeros((1500, COLS), float)
-    # X_test = np.zeros((500, COLS), float)
-    #
-    # for i in range(1500):
-    #     X_train[i] = np.hstack((X_train1[i], X_train2[i]))
-    #
-    #
-    # for i in range(500):
-    #     X_test[i] = np.hstack((X_test1[i], X_test2[i]))
-    #
-    # # X_train = np.append(X_train, X_train2)
-    # # X_test = np.append(X_test, X_test2)
-
-
     #Reshape to satisfy keras Conv1D input_shape
     X_train = X_train.reshape(-1, ROWS, COLS)
     X_test = X_test.reshape(-1, ROWS, COLS)
