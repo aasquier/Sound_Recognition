@@ -25,7 +25,6 @@ FEATURES = 135
 NUM_CLASSES = 50
 
 
-
 trainingExamples, trainingTargets, testingExamples, testingTargets = readDataFile(AUDIO_DATA)
 
 trainingExamples = trainingExamples.reshape(1500, 9, 15, 1)
