@@ -1,16 +1,15 @@
 import sys
-import keras
-import numpy as np
-from keras.datasets import mnist
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten
-# from keras.layers import Conv2D, MaxPooling2D
-from keras.layers import Conv1D, MaxPooling1D
-
 sys.path.insert(0, '../')
 from extractFeatures import readDataFile
 
-np.set_printoptions(threshold=np.nan) #Configure numpy's array printing to show everything
+import numpy as np
+import keras
+from keras.datasets import mnist
+from keras.models import Sequential
+from keras.layers import Dense, Activation, Dropout, Flatten, Conv1D, MaxPooling1D
+from keras.optimizers import RMSprop
+
+
 
 #Data files
 AUDIO_DATA      = "../data/audioData.csv"
@@ -18,46 +17,65 @@ IMAGE_DATA      = "../data/imageData.csv"
 AUDIO_DATA_NORM = "../data/audioDataNormalized.csv"
 IMAGE_DATA_NORM = "../data/imageDataNormalized.csv"
 
-# #Constants
-# TRAINING_M = 1500
-# TESTING_M = 2000 - TRAINING_M
-# FEATURES = 135
-# NUM_CLASSES = 50
-
 #Constants
-FEATURES = 135
 ROWS = 1
 COLS = 135
 N_CLASSES = 50
 
 # Hyper Parameters
-N_UNITS = 256
-BATCH_SIZE = 128
+BATCH_SIZE = 256
 EPOCHS = 100
-
-trainingExamples, trainingTargets, testingExamples, testingTargets = readDataFile(AUDIO_DATA)
-
-# trainingExamples = trainingExamples.reshape(1500, 9, 15, 1)
-# testingExamples = testingExamples.reshape(500, 9, 15, 1)
-
-trainingExamples = trainingExamples.reshape(1500, ROWS, COLS)
-trainingTargets = trainingTargets.reshape(500, ROWS, COLS)
-
-trainingTargets = keras.utils.to_categorical(trainingTargets, N_CLASSES)
-testingTargets = keras.utils.to_categorical(testingTargets, N_CLASSES)
-
-# trainingTargets = keras.utils.to_categorical(trainingTargets, NUM_CLASSES)
-# testingTargets = keras.utils.to_categorical(testingTargets, NUM_CLASSES)
-
-print "TrainingExamples: ", trainingExamples.shape
-print "TrainingTargets: ", trainingTargets.shape
+KERNEL_SIZE = (3)
 
 
+aud_X_train, aud_y_train, aud_X_test, aud_y_test = readDataFile(AUDIO_DATA)
+im_X_train, im_y_train, im_X_test, im_y_test = readDataFile(IMAGE_DATA)
+
+
+
+# aud_X_train = aud_X_train.reshape(aud_X_train.shape[0], ROWS, COLS)
+aud_X_train = aud_X_train.reshape(-1, ROWS, COLS)
+aud_X_test = aud_X_test.reshape(-1, ROWS, COLS)
+aud_X_train.shape
+
+im_X_train = im_X_train.reshape(-1, ROWS, COLS)
+im_X_test = im_X_test.reshape(-1, ROWS, COLS)
+
+aud_Y_train = keras.utils.to_categorical(aud_y_train, N_CLASSES)
+aud_Y_test = keras.utils.to_categorical(aud_y_test, N_CLASSES)
+im_Y_train = keras.utils.to_categorical(im_y_train, N_CLASSES)
+im_Y_test = keras.utils.to_categorical(im_y_test, N_CLASSES)
+
+# RNN LSTM
 model = Sequential()
-model.add(Conv2D(32, kernel_size=(3,3), padding='same', activation='relu', input_shape = (ROWS, COLS)))
-model.add(Flatten())
-model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adadelta(), metrics=['accuracy'])
-model.summary()
 
-model.fit(trainingExamples, trainingTargets, batch_size=BATCH_SIZE, epochs=EPOCHS, verbose=1, validation_data=(testingExamples, testingTargets))
-#score = model.evaluate()
+model.add(Conv1D(32, kernel_size=KERNEL_SIZE, padding='same', activation='relu', input_shape = (ROWS, COLS), data_format = 'channels_first'))
+model.add(Conv1D(64, kernel_size=KERNEL_SIZE, activation='relu'))
+model.add(MaxPooling1D(pool_size=3))
+model.add(Dropout(0.25))
+model.add(Flatten())
+model.add(Dense(N_CLASSES))
+model.add(Dropout(0.50))
+model.add(Dense(N_CLASSES, activation='softmax'))
+
+model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+
+model.fit(aud_X_train, aud_Y_train,
+         batch_size=BATCH_SIZE,
+         epochs=EPOCHS,
+         verbose=1,
+         validation_data=(aud_X_test, aud_Y_test))
+
+score = model.evaluate(aud_X_test, aud_Y_test, verbose=0)
+
+
+# model.fit(im_X_train, im_Y_train,
+#          batch_size=BATCH_SIZE,
+#          epochs=EPOCHS,
+#          verbose=1,
+#          validation_data=(im_X_test, im_Y_test))
+#
+# score = model.evaluate(im_X_test, im_Y_test, verbose=0)
+
+print "Loss: ", round(score[0], 3) * 100, "%"
+print "Accuracy: ", round(score[1], 3) * 100, "%"

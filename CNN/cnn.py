@@ -3,14 +3,11 @@ import keras
 import numpy as np
 from keras.datasets import mnist
 from keras.models import Sequential
-from keras.layers import Dense, Dropout, Flatten
-# from keras.layers import Conv2D, MaxPooling2D
-from keras.layers import Conv1D, MaxPooling1D
-
+from keras.layers import Dense, Activation, Dropout, Flatten, Conv1D, MaxPooling1D
+from keras.optimizers import RMSprop
 sys.path.insert(0, '../')
 from extractFeatures import readDataFile
 
-np.set_printoptions(threshold=np.nan) #Configure numpy's array printing to show everything
 
 #Data files
 AUDIO_DATA      = "../data/audioData.csv"
@@ -19,67 +16,62 @@ AUDIO_DATA_NORM = "../data/audioDataNormalized.csv"
 IMAGE_DATA_NORM = "../data/imageDataNormalized.csv"
 
 #Constants
-TRAINING_M = 1500
-TESTING_M = 2000 - TRAINING_M
-FEATURES = 135
-INPUT_SHAPE = (TRAINING_M, FEATURES) #(BATCH_SIZE, FEATURES, 1)
+ROWS = 1
+COLS = 135
+N_CLASSES = 50
 
-#Hyper Parameters
-BATCH_SIZE = 100
-NUM_CLASSES = 50
-NUM_FILTERS = 32
-NUM_DENSE_LAYERS = NUM_FILTERS * 2 #Used to predict the labels
+# Hyper Parameters
+BATCH_SIZE = 256
+EPOCHS = 100
 KERNEL_SIZE = (3)
-POOL_SIZE = (2)                 #Used for downsampling
-EPOCHS = 12
-DROP_OUT = (0.25, 0.50)            #Reduces overfitting
 
+np.random.seed(10)
 
 def main():
-    trainingExamples, trainingTargets, testingExamples, testingTargets = setupCNN()
-    testLoss, testAccuracy = trainCNN(trainingExamples, trainingTargets, testingExamples, testingTargets)
-    print('Test loss:', testLoss)
-    print('Test accuracy:', testAccuracy)
+    loss, accuracy = classifyData(AUDIO_DATA)
+    #loss, accuracy = trainModel(IMAGE_DATA)
 
-def trainCNN(trainingExamples, trainingTargets, testingExamples, testingTargets):
+    print "\nLoss: ", loss, "%"
+    print "Accuracy: ", accuracy, "%"
+
+
+
+def classifyData(dataFileName):
+    X_train, y_train, X_test, y_test = readDataFile(dataFileName)
+
+    #Reshape to satisfy keras Conv1D input_shape
+    X_train = X_train.reshape(-1, ROWS, COLS)
+    X_test = X_test.reshape(-1, ROWS, COLS)
+
+    #Convert into binary representation
+    Y_train = keras.utils.to_categorical(y_train, N_CLASSES)
+    Y_test = keras.utils.to_categorical(y_test, N_CLASSES)
+
+    loss, accuracy = trainModel(X_train, X_test, Y_train, Y_test)
+    return loss, accuracy
+
+
+def trainModel(X_train, X_test, Y_train, Y_test):
     model = Sequential()
-    #params: Conv2D(kernel size (dimensions of the weights), input_shape = (width, height, channels)) #Where channels is like RGB - I think ours is just 1 (maybe 0)??
-    model.add(Conv1D(NUM_FILTERS, kernel_size=KERNEL_SIZE,
-                     activation='relu',
-                     input_shape=INPUT_SHAPE))
-    model.add(Conv1D(NUM_FILTERS, kernel_size=KERNEL_SIZE,
-                     activation='relu'))
-    model.add(MaxPooling1D(pool_size=POOL_SIZE))
-    model.add(Dropout(DROP_OUT[0]))
+
+    model.add(Conv1D(32, kernel_size=KERNEL_SIZE, padding='same', activation='relu', input_shape = (ROWS, COLS), data_format = 'channels_first'))
+    model.add(Conv1D(64, kernel_size=KERNEL_SIZE, activation='relu'))
+    model.add(MaxPooling1D(pool_size=3))
+    model.add(Dropout(0.25))
     model.add(Flatten())
-    model.add(Dense(NUM_DENSE_LAYERS, activation='relu'))
-    model.add(Dropout(DROP_OUT[1]))
-    model.add(Dense(NUM_CLASSES, activation='softmax'))
+    model.add(Dense(N_CLASSES))
+    model.add(Dropout(0.50))
+    model.add(Dense(N_CLASSES, activation='softmax'))
 
-    model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adadelta(), metrics=['accuracy'])
-    model.fit(trainingExamples, trainingTargets,
-            batch_size=BATCH_SIZE,
-            epochs=EPOCHS,
-            verbose=1,
-            validation_data=(testingExamples, testingTargets))
-            # validation_data=None)
+    model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
-    score = model.evaluate(testingExamples, testingTargets, verbose=0)
-    return score[0], score[1]
+    model.fit(X_train, Y_train,
+                batch_size=BATCH_SIZE,
+                epochs=EPOCHS,
+                verbose=1,
+                validation_data=(X_test, Y_test))
 
-
-
-def setupCNN():
-    trainingExamples, trainingTargets, testingExamples, testingTargets = readDataFile(AUDIO_DATA)
-
-    trainingExamples = trainingExamples.reshape(TRAINING_M, FEATURES, 1)
-    testingExamples = testingExamples.reshape(TESTING_M, FEATURES, 1)
-
-    # convert class vectors to binary class matrices
-    trainingTargets = keras.utils.to_categorical(trainingTargets, NUM_CLASSES)
-    testingTargets = keras.utils.to_categorical(testingTargets, NUM_CLASSES)
-    return trainingExamples, trainingTargets, testingExamples, testingTargets
-
-
+    score = model.evaluate(X_test, Y_test, verbose=0)
+    return round(score[0] * 100, 3), round(score[1] * 100, 3)
 
 main()
