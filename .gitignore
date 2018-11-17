@@ -2,3 +2,5 @@
 *.~
 *.wav__pycache__/*
 data/*
+images/*
+RNN/images/*
