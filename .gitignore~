@@ -2,4 +2,5 @@
 *.~
 /data/*
 /data
-*.wav
+*.wav__pycache__/*
+__pycache__/
