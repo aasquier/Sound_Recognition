@@ -22,8 +22,9 @@ from extractFeatures import readDataFile
 N_MFCC          = 117
 AUDIO_FEATURES  = 135
 IMAGE_FEATURES  = 135
+FEATURES        = 135
 READ_ALL        = -1
-TRAINING_M      = 6000     # How many examples do we want here to divide the training and test sets??
+TRAINING_M      = 1500     # How many examples do we want here to divide the training and test sets??
 
 
 ''' Extracts features and saves into a .csv file '''
@@ -130,6 +131,8 @@ def normalizeData(audioData, imageData):
         imageNormalized[i] = np.hstack((imageData[i][:1], imageDataWOLabel[i]))
 
     return audioNormalized, imageNormalized
+
+
 '''
 Reads a file of examples, splits it into two sets (one for
 training and one for testing), and then peels off the targets
@@ -150,42 +153,60 @@ def readDataFile(fileName):
 
     return trainingExamples, trainingTargets, testingExamples, testingTargets
 
-def readDataFiles():
-    rawDataAudio           = np.empty(10, float)
-    rawDataAudioNormalized = np.empty(10, float)
-    rawDataVideo           = np.empty(10, float)
-    rawDataVideoNormalized = np.empty(10, float)
+
+def readDataFiles(iteration):
+    audioTrainingExamples           = np.empty((0, 136))
+    audioTrainingExamplesNormalized = np.empty((0, 136))
+    videoTrainingExamples           = np.empty((0, 136))
+    videoTrainingExamplesNormalized = np.empty((0, 136))
+
+    audioTestingExamples            = np.empty((0, 136))
+    audioTestingExamplesNormalized  = np.empty((0, 136))
+    videoTestingExamples            = np.empty((0, 136))
+    videoTestingExamplesNormalized  = np.empty((0, 136))
 
     for i in range(10):
-        audioFileName             = "./data/audio/audioDataFold" + str(i+1) + ".csv"
-        audioFileNameNormal       = "./data/audio/audioDataFold" + str(i+1) + "Normalized.csv"
-        videoFileName             = "./data/audio/imageDataFold" + str(i+1) + ".csv"
-        videoFileNameNormal       = "./data/audio/imageDataFold" + str(i+1) + "Normalized.csv"
-        rawDataAudio[i]           = np.genfromtxt(audioFileName, delimiter=',')
-        rawDataAudioNormalized[i] = np.genfromtxt(audioFileNameNormal, delimiter=',')
-        rawDataVideo[i]           = np.genfromtxt(videoFileName, delimiter=',')
-        rawDataVideoNormalized[i] = np.genfromtxt(videoFileNameNormal, delimiter=',')
+        audioFileName          = "../data/audioDataFold" + str(i+1) + ".csv"
+        audioFileNameNormal    = "../data/audioDataFold" + str(i+1) + "Normalized.csv"
+        videoFileName          = "../data/imageDataFold" + str(i+1) + ".csv"
+        videoFileNameNormal    = "../data/imageDataFold" + str(i+1) + "Normalized.csv"
 
-    return rawDataAudio, rawDataAudioNormalized, rawDataVideo, rawDataVideoNormalized
+        if i != iteration:
+            audioTrainingExamples           = np.concatenate((audioTrainingExamples, np.genfromtxt(audioFileName, delimiter=',')))
+            audioTrainingExamplesNormalized = np.concatenate((audioTrainingExamplesNormalized, np.genfromtxt(audioFileNameNormal, delimiter=',')))
+            videoTrainingExamples           = np.concatenate((videoTrainingExamples, np.genfromtxt(videoFileName, delimiter=',')))
+            videoTrainingExamplesNormalized = np.concatenate((videoTrainingExamplesNormalized, np.genfromtxt(videoFileNameNormal, delimiter=',')))
+        else:
+            audioTestingExamples, audioTestingExamplesNormalized, videoTestingExamples, videoTestingExamplesNormalized = (np.genfromtxt(audioFileName, delimiter=',')), (np.genfromtxt(audioFileNameNormal, delimiter=',')), (np.genfromtxt(videoFileName, delimiter=',')), (np.genfromtxt(videoFileNameNormal, delimiter=','))
 
 
-def crossValidationIteration(rawDataAudio, rawDataVideo, iteration):
-    audioTestingExamples  = rawDataAudio[iteration]
-    audioTrainingExamples = np.delete(rawDataAudio, iteration, axis=0)
-    videoTestingExamples  = rawDataVideo[iteration]
-    videoTrainingExamples = np.delete(rawDataVideo, iteration, axis=0)
+    return audioTrainingExamples, audioTrainingExamplesNormalized, videoTrainingExamples, videoTrainingExamplesNormalized, audioTestingExamples, audioTestingExamplesNormalized, videoTestingExamples, videoTestingExamplesNormalized
+
+
+def crossValidationIteration(iteration):
+    audioTrainingExamples, audioTrainingExamplesNormalized, videoTrainingExamples, videoTrainingExamplesNormalized, audioTestingExamples, audioTestingExamplesNormalized, videoTestingExamples, videoTestingExamplesNormalized = readDataFiles(iteration)
 
     np.random.shuffle(audioTestingExamples)
     np.random.shuffle(audioTrainingExamples)
     np.random.shuffle(videoTestingExamples)
     np.random.shuffle(videoTrainingExamples)
+    np.random.shuffle(audioTestingExamplesNormalized)
+    np.random.shuffle(audioTrainingExamplesNormalized)
+    np.random.shuffle(videoTestingExamplesNormalized)
+    np.random.shuffle(videoTrainingExamplesNormalized)
 
-    audioTestingTargets  = stripTargets(audioTestingExamples)
-    audioTrainingTargets = stripTargets(audioTrainingExamples)
-    videoTestingTargets  = stripTargets(videoTestingExamples)
-    videoTrainingTargets = stripTargets(videoTrainingExamples)
+    audioTestingExamples, audioTestingTargets   = stripTargets(audioTestingExamples)
+    audioTrainingExamples, audioTrainingTargets = stripTargets(audioTrainingExamples)
+    videoTestingExamples, videoTestingTargets   = stripTargets(videoTestingExamples)
+    videoTrainingExamples, videoTrainingTargets = stripTargets(videoTrainingExamples)
 
-    return  audioTrainingExamples, audioTestingExamples, audioTrainingTargets, audioTestingTargets, videoTrainingExamples, videoTestingExamples, videoTrainingTargets, videoTestingTargets
+    audioTestingExamplesNormalized, audioTestingTargetsNormalized   = stripTargets(audioTestingExamplesNormalized)
+    audioTrainingExamplesNormalized, audioTrainingTargetsNormalized = stripTargets(audioTrainingExamplesNormalized)
+    videoTestingExamplesNormalized, videoTestingTargetsNormalized   = stripTargets(videoTestingExamplesNormalized)
+    videoTrainingExamplesNormalized, videoTrainingTargetsNormalized = stripTargets(videoTrainingExamplesNormalized)
+
+    return audioTrainingExamples, audioTestingExamples, audioTrainingTargets, audioTestingTargets, videoTrainingExamples, videoTestingExamples, videoTrainingTargets, videoTestingTargets, audioTrainingExamplesNormalized, audioTestingExamplesNormalized, audioTrainingTargetsNormalized, audioTestingTargetsNormalized, videoTrainingExamplesNormalized, videoTestingExamplesNormalized, videoTrainingTargetsNormalized, videoTestingTargetsNormalized
+
 
 '''
 Removes the target from each row (the last index) and
@@ -194,8 +215,7 @@ and returns them in an array.
 '''
 def stripTargets(examplesRaw):
     examplesAmt     = len(examplesRaw)                      # Number of examples
-    featuresAmt     = len(examplesRaw[0]) - 1               # Amount of features - target
-    examples        = np.zeros((examplesAmt, featuresAmt))
+    examples        = np.zeros((examplesAmt, FEATURES))
     targets         = np.zeros(examplesAmt, int)            # Targets for each examples
 
     for i in range(examplesAmt):
@@ -215,11 +235,11 @@ def convertWavToSpectrogram(fileName):
     plt.show()
 
 
-def main():
-    extractFeatures()
-    extractAndNormalizeFeatures()
-
-    return
-
-
-main()
+# def main():
+#     extractFeatures()
+#     extractAndNormalizeFeatures()
+#
+#     return
+#
+#
+# main()

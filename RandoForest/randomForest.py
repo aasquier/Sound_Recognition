@@ -6,48 +6,52 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sb
 
-
-
 def main():
-    rawDataAudio, rawDataAudioNormalized, rawDataVideo, rawDataVideoNormalized = ef.readDataFiles()
+    accResults = np.zeros((10, 3))
 
     for i in range(10):
-        audioTrainingExamples, audioTestingExamples, audioTrainingTargets, audioTestingTargets, videoTrainingExamples, videoTestingExamples, videoTrainingTargets, videoTestingTargets = ef.crossValidationIteration(rawDataAudio, rawDataVideo, i)
+        audioTrainingExamples, audioTestingExamples, audioTrainingTargets, audioTestingTargets, videoTrainingExamples, videoTestingExamples, videoTrainingTargets, videoTestingTargets, audioTrainingExamplesNormalized, audioTestingExamplesNormalized, audioTrainingTargetsNormalized, audioTestingTargetsNormalized, videoTrainingExamplesNormalized, videoTestingExamplesNormalized, videoTrainingTargetsNormalized, videoTestingTargetsNormalized = ef.crossValidationIteration(i)
 
         fullTrainingExamples = np.concatenate((audioTrainingExamples, videoTrainingExamples))
         fullTestingExamples  = np.concatenate((audioTestingExamples, videoTestingExamples))
         fullTrainingTargets  = np.hstack((audioTrainingTargets, videoTrainingTargets))
         fullTestingTargets   = np.hstack((audioTestingTargets, videoTestingTargets))
 
-
-        clfAudio = RandomForestClassifier(n_estimators=1000)
+        clfAudio = RandomForestClassifier(n_estimators=200)
         clfAudio.fit(audioTrainingExamples, audioTrainingTargets)
         audioTestPredictions = clfAudio.predict(audioTestingExamples)
-        audioTrainPredictions = clfAudio.predict(audioTrainingExamples)
 
-
-        clfVideo = RandomForestClassifier(n_estimators=1000)
+        clfVideo = RandomForestClassifier(n_estimators=200)
         clfVideo.fit(videoTrainingExamples, videoTrainingTargets)
         videoTestPredictions = clfVideo.predict(videoTestingExamples)
-        videoTrainPredictions = clfVideo.predict(videoTrainingExamples)
 
-        clfAll = RandomForestClassifier(n_estimators=1000)
+        clfAll = RandomForestClassifier(n_estimators=200)
         clfAll.fit(fullTrainingExamples, fullTrainingTargets)
         fullTestPredictions = clfAll.predict(fullTestingExamples)
-        fullTrainPredictions = clfAll.predict(fullTrainingExamples)
 
-        print("Accuracy on audio test data:        ", (round((metrics.accuracy_score(audioTestingTargets, audioTestPredictions) * 100), 4)), "%")
-        print("Accuracy on audio training data:    ", (round((metrics.accuracy_score(audioTrainingTargets, audioTrainPredictions) * 100), 4)), "%")
+        audioTestAcc  = round((metrics.accuracy_score(audioTestingTargets, audioTestPredictions) * 100), 2)
+        videoTestAcc  = round((metrics.accuracy_score(videoTestingTargets, videoTestPredictions) * 100), 2)
+        fullTestAcc   = round((metrics.accuracy_score(fullTestingTargets, fullTestPredictions) * 100), 2)
 
-        print("Accuracy on video test data:        ", (round((metrics.accuracy_score(videoTestingTargets, videoTestPredictions) * 100), 4)), "%")
-        print("Accuracy on video training data:    ", (round((metrics.accuracy_score(videoTrainingTargets, videoTrainPredictions) * 100), 4)), "%")
+        accResults[i, 0] = audioTestAcc
+        accResults[i, 1] = videoTestAcc
+        accResults[i, 2] = fullTestAcc
 
-        print("Accuracy on combined test data:     ", (round((metrics.accuracy_score(fullTestingTargets, fullTestPredictions) * 100), 4)), "%")
-        print("Accuracy on combined training data: ", (round((metrics.accuracy_score(fullTrainingTargets, fullTrainPredictions) * 100), 4)), "%")
+        print("\nAccuracy on audio test data for iteration " + str(i+1) + "    :   ", audioTestAcc, "%")
+        print("Accuracy on video test data for iteration " + str(i+1) + "    :   ", videoTestAcc, "%")
+        print("Accuracy on combined test data for iteration " + str(i+1) + " :   ", fullTestAcc, "%")
 
-        calculateConfusionMatrix(audioTestingTargets, audioTestPredictions)
-        calculateConfusionMatrix(videoTestingTargets, videoTestPredictions)
-        calculateConfusionMatrix(fullTestingTargets, fullTestPredictions)
+        # calculateConfusionMatrix(audioTestingTargets, audioTestPredictions)
+        # calculateConfusionMatrix(videoTestingTargets, videoTestPredictions)
+        # calculateConfusionMatrix(fullTestingTargets, fullTestPredictions)
+
+    accTotals = np.sum(accResults, axis=0)
+    accTotals /= 10.0
+
+    print("\nAverage accuracy on audio test data:      ", round((accTotals[0]), 2), "%")
+    print("Average accuracy on video test data:      ", round((accTotals[1]), 2), "%")
+    print("Average accuracy on combined test data:   ", round((accTotals[2]), 2), "%")
+
 
     return
 
