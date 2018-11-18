@@ -130,14 +130,26 @@ def normalizeData(audioData, imageData):
         imageNormalized[i] = np.hstack((imageData[i][:1], imageDataWOLabel[i]))
 
     return audioNormalized, imageNormalized
-
-
 '''
 Reads a file of examples, splits it into two sets (one for
 training and one for testing), and then peels off the targets
 (last value in each row)
 Returns the training set, testing set, training targets, testing targets
 '''
+def readDataFile(fileName):
+    rawData = np.genfromtxt(fileName, delimiter=',')
+    np.random.shuffle(rawData)
+
+    #Format the training examples
+    trainingExamples = rawData[:TRAINING_M]
+    trainingExamples, trainingTargets = stripTargets(trainingExamples)
+
+    #Format the testing examples
+    testingExamples = rawData[TRAINING_M:]
+    testingExamples, testingTargets = stripTargets(testingExamples)
+
+    return trainingExamples, trainingTargets, testingExamples, testingTargets
+
 def readDataFiles():
     rawDataAudio           = np.empty(10, float)
     rawDataAudioNormalized = np.empty(10, float)
