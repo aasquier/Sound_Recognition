@@ -1,0 +1,4 @@
+Averages for  5  iterations:
+Average Audio Accuracy [ 5 ]:     59.23 %
+Average Image Accuracy [ 5 ]:     50.71 %
+Average Combined Accuracy [ 5 ]:  51.57 %
