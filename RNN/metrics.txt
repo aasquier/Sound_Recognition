@@ -1,3 +1,4 @@
+50 Class Model
 Units: 128, Shape: (1, 135), Accuracy: 0.47200000095367434
 Units: 128, Shape: (1, 135), Accuracy: 0.4819999990463257
 Units: 128, Shape: (1, 135), Accuracy: 0.474
