@@ -1,9 +1,4 @@
 
-# coding: utf-8
-
-# In[1]:
-
-
 import sys
 sys.path.insert(0, '/Users/carsoncook/Dev/CS445/Group_Project_cs445')
 import extractFeatures as ef
@@ -18,7 +13,6 @@ from keras.optimizers import RMSprop
 
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
-import seaborn as sn
 import matplotlib.pyplot as plt
 
 #Constants
@@ -30,29 +24,12 @@ N_CLASSES = 10
 # Hyper Parameters
 UNITS = 128
 BATCH_SIZE = 256
-EPOCHS = 100
+EPOCHS = 10
 # DROPOUT = (.25, .5)
 IMAGE_PATH = 'images/'
+ACC_PATH = 'accuracies/'
 
 np.random.seed(10)
-
-
-# In[2]:
-
-
-def make_heatmap(cm, plot_title, file_name):
-    plt.figure(1, figsize=(7, 7))
-    plt.title(plot_title)
-    sn.heatmap(cm, annot=True, fmt='g', cmap='Blues')
-    plt.ylabel('Actual')
-    plt.xlabel('Predicted')
-    # plt.show()
-    plt.savefig('images/{}'.format(file_name))
-    plt.clf()
-
-
-# In[3]:
-
 
 # RNN LSTM
 def build_and_run_model(X_train, X_test, Y_train, Y_test, units, rows, cols, batch_size, epochs, fold, prefix):
@@ -81,15 +58,12 @@ def build_and_run_model(X_train, X_test, Y_train, Y_test, units, rows, cols, bat
     score = model.evaluate(X_test, Y_test, verbose=0)
     preds = model.predict_classes(X_test)
     y_test = np.argmax(Y_test, axis=1)
-    cm = confusion_matrix(y_test, preds)
-    make_heatmap(cm, 'Accuracy for Fold: {}'.format(fold), '{}_fold_{}_heatmap.png'.format(prefix, fold))
-#     print(preds.shape)
-#     print(preds)
+    # cm = confusion_matrix(y_test, preds)
+    output = np.vstack((preds, y_test)).T
+    file_name = '{}{}_fold_{}_accs.csv'.format(ACC_PATH, prefix, fold)
+    np.savetxt(file_name, output, fmt='%d', delimiter=',', header='predicted,actual')
     print("Score: ", score)
     return score[1]
-
-
-# In[4]:
 
 
 # Assess model using cross validation
@@ -129,9 +103,6 @@ def run_k_fold_cv(k, acc_file, units, rows, cols):
         outfile.write('\nAvg. Audio Acc: {}, Avg. Image Acc: {}, Avg. Combined Acc: {}'.format(
             avgs[0], avgs[1], avgs[2]
         ))
-
-
-# In[5]:
 
 
 run_k_fold_cv(10, 'accuracies_v2.txt', UNITS, ROWS, COLS)
